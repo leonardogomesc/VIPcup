@@ -149,6 +149,19 @@ class RandomHorizontalFlip:
         return image, target
 
 
+class ColorJitter:
+    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+        self.tf = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
+
+    def __call__(self, sample):
+        image = sample[0]
+        target = sample[1]
+
+        image = self.tf(image)
+
+        return image, target
+
+
 class ToTensor:
     def __init__(self):
         self.tf = transforms.ToTensor()

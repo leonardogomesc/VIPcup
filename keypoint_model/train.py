@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 import torchvision
 import torchvision.transforms as transforms
 from dataset import CustomDataset
-from utils import Resize, RandomCrop, RandomHorizontalFlip, ToTensor, show_keypoints
+from utils import Resize, RandomCrop, RandomHorizontalFlip, ColorJitter, ToTensor, show_keypoints
 import numpy as np
 import json
 
@@ -32,6 +32,7 @@ def train():
     train_tf = transforms.Compose([Resize((int(160*prop), int(120*prop))),
                                    RandomCrop((160, 120)),
                                    RandomHorizontalFlip(),
+                                   ColorJitter(brightness=(0.75, 1.25), contrast=(0.75, 1.25)),
                                    ToTensor()])
 
     train_dataset = CustomDataset('C:\\Users\\Leonardo Capozzi\\Desktop\\VIPcup\\train', ['.png'], train_tf, image_type='IR', cover_types=['cover1_gen', 'cover2_gen'])
