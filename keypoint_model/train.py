@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 import torchvision
 import torchvision.transforms as transforms
 from dataset import CustomDataset
-from utils import Resize, RandomCrop, RandomHorizontalFlip, ColorJitter, ToTensor, show_keypoints
+from utils import Resize, RandomCrop, RandomHorizontalFlip, RandomRotation, ColorJitter, ToTensor, show_keypoints
 import numpy as np
 import json
 
@@ -29,7 +29,8 @@ def train():
 
     # Train Data
     prop = 1.1
-    train_tf = transforms.Compose([Resize((int(160*prop), int(120*prop))),
+    train_tf = transforms.Compose([RandomRotation((-10, 10)),
+                                   Resize((int(160*prop), int(120*prop))),
                                    RandomCrop((160, 120)),
                                    RandomHorizontalFlip(),
                                    ColorJitter(brightness=(0.75, 1.25), contrast=(0.75, 1.25)),
@@ -205,5 +206,6 @@ def gen_submission():
 
 if __name__ == '__main__':
     train()
+
 
 
