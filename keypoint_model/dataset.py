@@ -5,7 +5,7 @@ import scipy.io as sio
 import numpy as np
 from PIL import Image
 import torchvision.transforms as transforms
-from utils import Resize, RandomCrop, RandomHorizontalFlip, ColorJitter, ToTensor, show_keypoints
+from utils import Resize, RandomCrop, RandomHorizontalFlip, RandomRotation, ColorJitter, ToTensor, show_keypoints
 
 
 class CustomDataset(Dataset):
@@ -100,7 +100,8 @@ class CustomDataset(Dataset):
 
 def test():
     p = 1.1
-    tf = transforms.Compose([Resize((int(160*p), int(120*p))),
+    tf = transforms.Compose([RandomRotation((-10, 10)),
+                             Resize((int(160*p), int(120*p))),
                              RandomCrop((160, 120)),
                              RandomHorizontalFlip(),
                              ColorJitter(brightness=(0.75, 1.25), contrast=(0.75, 1.25)),

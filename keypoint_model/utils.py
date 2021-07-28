@@ -83,7 +83,7 @@ class RandomCrop:
         boxes[:, 3] -= top
 
         # change visibility if keypoint out of frame
-        vis = (keypoints[:, :, 0] >= 0) & (keypoints[:, :, 0] < self.final_width) & (keypoints[:, :, 1] >= 0) & (keypoints[:, :, 1] < self.final_height)
+        vis = (keypoints[:, :, 0] >= 0) & (keypoints[:, :, 0] < self.final_width) & (keypoints[:, :, 1] >= 0) & (keypoints[:, :, 1] < self.final_height) & (keypoints[:, :, 2] != 0)
         keypoints[:, :, 2] = torch.where(vis, 1, 0)
 
         # boxes must be within frame
@@ -143,6 +143,58 @@ class RandomHorizontalFlip:
             boxes_temp[:, 3] = boxes[:, 3]
 
             boxes = boxes_temp
+
+        target = {'keypoints': keypoints, 'boxes': boxes, 'labels': labels}
+
+        return image, target
+
+
+class RandomRotation:
+    def __init__(self, degrees):
+        self.degrees = degrees
+
+    def __call__(self, sample):
+        image = sample[0]
+        target = sample[1]
+
+        keypoints = target['keypoints']
+        boxes = target['boxes']
+        labels = target['labels']
+
+        selected_degrees = random.uniform(self.degrees[0], self.degrees[1])
+        width, height = image.size
+        center = ((width - 1) / 2, (height - 1) / 2)
+        fill = image.getpixel((10, 10))
+
+        image = transforms.functional.rotate(image, selected_degrees, center=center, fill=fill)
+
+        rads = (selected_degrees * math.pi) / 180
+        rads = -rads
+
+        center = torch.tensor(center)
+        v = keypoints[:, :, 0:2] - center
+
+        new_v = torch.zeros_like(v)
+
+        new_v[:, :, 0] = math.cos(rads) * v[:, :, 0] - math.sin(rads) * v[:, :, 1]
+        new_v[:, :, 1] = math.sin(rads) * v[:, :, 0] + math.cos(rads) * v[:, :, 1]
+
+        keypoints[:, :, 0:2] = center + new_v
+
+        boxes[:, 0] = torch.min(keypoints[:, :, 0], dim=1)[0]
+        boxes[:, 1] = torch.min(keypoints[:, :, 1], dim=1)[0]
+        boxes[:, 2] = torch.max(keypoints[:, :, 0], dim=1)[0]
+        boxes[:, 3] = torch.max(keypoints[:, :, 1], dim=1)[0]
+
+        # change visibility if keypoint out of frame
+        vis = (keypoints[:, :, 0] >= 0) & (keypoints[:, :, 0] < width) & (keypoints[:, :, 1] >= 0) & (keypoints[:, :, 1] < height) & (keypoints[:, :, 2] != 0)
+        keypoints[:, :, 2] = torch.where(vis, 1, 0)
+
+        # boxes must be within frame
+        boxes[:, 0] = torch.where(boxes[:, 0] < 0, torch.tensor(0, dtype=boxes.dtype), boxes[:, 0])
+        boxes[:, 2] = torch.where(boxes[:, 2] >= width, torch.tensor(width - 1, dtype=boxes.dtype), boxes[:, 2])
+        boxes[:, 1] = torch.where(boxes[:, 1] < 0, torch.tensor(0, dtype=boxes.dtype), boxes[:, 1])
+        boxes[:, 3] = torch.where(boxes[:, 3] >= height, torch.tensor(height - 1, dtype=boxes.dtype), boxes[:, 3])
 
         target = {'keypoints': keypoints, 'boxes': boxes, 'labels': labels}
 
